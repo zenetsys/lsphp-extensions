@@ -1,0 +1,50 @@
+name: Compilar Extensiones MongoDB para LSPHP
+
+on:
+  workflow_dispatch:
+    inputs:
+      php_version:
+        description: 'Versión de LSPHP a compilar (ej. 8.3, 8.4)'
+        required: true
+        default: '8.3'
+        type: choice
+        options:
+          - 8.3
+          - 8.4
+          # Agrega más versiones aquí conforme salgan
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar repositorio LiteSpeed / PPA
+        run: |
+          sudo apt update
+          sudo apt install -y software-properties-common wget
+          wget -O - https://repo.litespeed.sh | sudo bash
+
+      - name: Instalar dependencias y LSPHP ${{ github.event.inputs.php_version }} de desarrollo
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential libssl-dev pkg-config lsphp${{ github.event.inputs.php_version }} lsphp${{ github.event.inputs.php_version }}-dev php${{ github.event.inputs.php_version }}-pear
+
+      - name: Compilar extensión MongoDB vía PECL
+        run: |
+          sudo /usr/local/lsws/lsphp${{ github.event.inputs.php_version }}/bin/pecl install mongodb
+
+      - name: Organizar archivos compilados
+        run: |
+          mkdir -p compiled/lsphp${{ github.event.inputs.php_version }}
+          EXTENSION_PATH=$(sudo /usr/local/lsws/lsphp${{ github.event.inputs.php_version }}/bin/php-config --extension-dir)
+          cp "$EXTENSION_PATH/mongodb.so" compiled/lsphp${{ github.event.inputs.php_version }}/
+          echo "extension=mongodb.so" > compiled/lsphp${{ github.event.inputs.php_version }}/mongodb.ini
+
+      - name: Subir artefacto general
+        uses: actions/upload-artifact@v4
+        with:
+          name: mongodb-lsphp${{ github.event.inputs.php_version }}
+          path: compiled/lsphp${{ github.event.inputs.php_version }}/

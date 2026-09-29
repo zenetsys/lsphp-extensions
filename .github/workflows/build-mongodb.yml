@@ -1,0 +1,97 @@
+```yaml
+name: Compilar Extensión MongoDB para LSPHP
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar repositorio LiteSpeed
+        run: |
+          sudo -n apt-get update
+          sudo -n apt-get install -y curl wget
+
+          sudo -n wget -O - https://repo.litespeed.sh | sudo -n bash
+
+          sudo -n apt-get update
+
+      - name: Instalar LSPHP y herramientas
+        run: |
+          sudo -n apt-get install -y \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            autoconf \
+            automake \
+            libtool \
+            lsphp83 \
+            lsphp83-dev \
+            lsphp83-pear
+
+      - name: Verificar LSPHP
+        run: |
+          /usr/local/lsws/lsphp83/bin/php -v
+          /usr/local/lsws/lsphp83/bin/phpize -v
+          /usr/local/lsws/lsphp83/bin/php-config --version
+          /usr/local/lsws/lsphp83/bin/pecl version
+
+      - name: Compilar extensión MongoDB
+        run: |
+          sudo -n /usr/local/lsws/lsphp83/bin/pecl install mongodb
+
+      - name: Verificar extensión MongoDB
+        run: |
+          EXTENSION_PATH=$(
+            /usr/local/lsws/lsphp83/bin/php-config --extension-dir
+          )
+
+          echo "Extension directory:"
+          echo "$EXTENSION_PATH"
+
+          ls -la "$EXTENSION_PATH"
+
+          /usr/local/lsws/lsphp83/bin/php \
+            -d extension="$EXTENSION_PATH/mongodb.so" \
+            -m | grep -i mongodb
+
+      - name: Organizar archivos compilados
+        run: |
+          mkdir -p compiled/lsphp83
+
+          EXTENSION_PATH=$(
+            /usr/local/lsws/lsphp83/bin/php-config --extension-dir
+          )
+
+          cp "$EXTENSION_PATH/mongodb.so" \
+            compiled/lsphp83/mongodb.so
+
+          echo "extension=mongodb.so" \
+            > compiled/lsphp83/mongodb.ini
+
+      - name: Mostrar archivos generados
+        run: |
+          ls -lh compiled/lsphp83/
+
+      - name: Guardar compilación en el repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add compiled/lsphp83/
+
+          if git diff --cached --quiet; then
+            echo "No hay cambios para guardar."
+          else
+            git commit -m "Update MongoDB extension for LSPHP 8.3"
+            git push
+          fi
+```

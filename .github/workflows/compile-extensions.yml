@@ -33,10 +33,10 @@ jobs:
           
           sudo apt-get update
 
-      - name: Instalar LSPHP y herramientas de compilación
+       - name: Instalar LSPHP y herramientas de compilación
         run: |
-          sudo apt-get install -y build-essential libssl-dev pkg-config lsphp${{ github.event.inputs.php_version }} lsphp${{ github.event.inputs.php_version }}-dev php-pear
-
+          sudo apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
+      
       - name: Compilar extensión MongoDB vía PECL
         run: |
           sudo /usr/local/lsws/lsphp${{ github.event.inputs.php_version }}/bin/pecl install mongodb

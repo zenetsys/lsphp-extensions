@@ -22,20 +22,20 @@ jobs:
 
       - name: Configurar repositorios y dependencias base
         run: |
-          apt-get update
-          apt-get install -y software-properties-common curl wget
+          sudo -n apt-get update
+          sudo -n apt-get install -y software-properties-common curl wget
           
-          # Agregar PPA de PHP para asegurar disponibilidad de PEAR y herramientas limpias
-          add-apt-repository -y ppa:ondrej/php
+          # Agregar PPA de PHP
+          sudo -n add-apt-repository -y ppa:ondrej/php
           
           # Agregar repositorio oficial de LiteSpeed
           wget -O - https://repo.litespeed.sh | bash
           
-          apt-get update
+          sudo -n apt-get update
 
       - name: Instalar LSPHP y herramientas de compilación
         run: |
-          apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
+          sudo -n apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
 
       - name: Compilar extensión MongoDB vía PECL
         run: |

@@ -22,34 +22,34 @@ jobs:
 
       - name: Configurar repositorios y dependencias base
         run: |
-          sudo apt-get update
-          sudo apt-get install -y software-properties-common curl wget
+          apt-get update
+          apt-get install -y software-properties-common curl wget
           
           # Agregar PPA de PHP para asegurar disponibilidad de PEAR y herramientas limpias
-          sudo add-apt-repository -y ppa:ondrej/php
+          add-apt-repository -y ppa:ondrej/php
           
           # Agregar repositorio oficial de LiteSpeed
-          wget -O - https://repo.litespeed.sh | sudo bash
+          wget -O - https://repo.litespeed.sh | bash
           
-          sudo apt-get update
-      
+          apt-get update
+
       - name: Instalar LSPHP y herramientas de compilación
         run: |
-          sudo apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
-      
+          apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
+
       - name: Compilar extensión MongoDB vía PECL
         run: |
-          sudo /usr/local/lsws/lsphp${{ github.event.inputs.php_version }}/bin/pecl install mongodb
+          /usr/local/lsws/lsphp83/bin/pecl install mongodb
 
       - name: Organizar archivos compilados
         run: |
-          mkdir -p compiled/lsphp${{ github.event.inputs.php_version }}
-          EXTENSION_PATH=$(sudo /usr/local/lsws/lsphp${{ github.event.inputs.php_version }}/bin/php-config --extension-dir)
-          cp "$EXTENSION_PATH/mongodb.so" compiled/lsphp${{ github.event.inputs.php_version }}/
-          echo "extension=mongodb.so" > compiled/lsphp${{ github.event.inputs.php_version }}/mongodb.ini
+          mkdir -p compiled/lsphp83
+          EXTENSION_PATH=$(/usr/local/lsws/lsphp83/bin/php-config --extension-dir)
+          cp "$EXTENSION_PATH/mongodb.so" compiled/lsphp83/
+          echo "extension=mongodb.so" > compiled/lsphp83/mongodb.ini
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
-          name: mongodb-lsphp${{ github.event.inputs.php_version }}
-          path: compiled/lsphp${{ github.event.inputs.php_version }}/
+          name: mongodb-lsphp83
+          path: compiled/lsphp83/

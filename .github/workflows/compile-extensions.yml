@@ -1,4 +1,4 @@
-name: Compilar Extensión MongoDB para LSPHP 8.3
+name: Compilar Extensión MongoDB para LSPHP 8.3 - test
 
 on:
   workflow_dispatch:

@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       php_version:
-        description: 'Versión de LSPHP a compilar (ej. 8.3, 8.4)'
+        description: 'Versión de LSPHP a compilar (ej. 8.3)'
         required: true
         default: '8.3'
         type: choice
         options:
           - 8.3
           - 8.4
-          # Agrega más versiones aquí conforme salgan
 
 jobs:
   build:
@@ -21,22 +20,22 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar repositorios para LSPHP 8.3
+      - name: Configurar repositorios y dependencias base
         run: |
           sudo apt-get update
-          sudo apt-get install -y software-properties-common curl
+          sudo apt-get install -y software-properties-common curl wget
           
-          # Agregar PPA de PHP (necesario para dependencias limpias y PEAR)
+          # Agregar PPA de PHP para asegurar disponibilidad de PEAR y herramientas limpias
           sudo add-apt-repository -y ppa:ondrej/php
           
-          # Agregar repositorio oficial de LiteSpeed correctamente para Ubuntu 22.04 (jammy)
-          curl -s https://repo.litespeed.sh | sudo bash
+          # Agregar repositorio oficial de LiteSpeed
+          wget -O - https://repo.litespeed.sh | sudo bash
           
           sudo apt-get update
 
-      - name: Instalar LSPHP y herramientas de desarrollo
+      - name: Instalar LSPHP y herramientas de compilación
         run: |
-          sudo apt-get install -y build-essential libssl-dev pkg-config lsphp${{ github.event.inputs.php_version }} lsphp${{ github.event.inputs.php_version }}-dev lsphp${{ github.event.inputs.php_version }}-common php${{ github.event.inputs.php_version }}-pear
+          sudo apt-get install -y build-essential libssl-dev pkg-config lsphp${{ github.event.inputs.php_version }} lsphp${{ github.event.inputs.php_version }}-dev php-pear
 
       - name: Compilar extensión MongoDB vía PECL
         run: |
@@ -49,7 +48,7 @@ jobs:
           cp "$EXTENSION_PATH/mongodb.so" compiled/lsphp${{ github.event.inputs.php_version }}/
           echo "extension=mongodb.so" > compiled/lsphp${{ github.event.inputs.php_version }}/mongodb.ini
 
-      - name: Subir artefacto general
+      - name: Subir artefacto
         uses: actions/upload-artifact@v4
         with:
           name: mongodb-lsphp${{ github.event.inputs.php_version }}

@@ -1,52 +1,72 @@
-name: Compilar Extensiones MongoDB para LSPHP
+name: Compilar Extensión MongoDB para LSPHP 8.3
 
 on:
   workflow_dispatch:
-    inputs:
-      php_version:
-        description: 'Versión de LSPHP a compilar (ej. 8.3)'
-        required: true
-        default: '8.3'
-        type: choice
-        options:
-          - 8.3
-          - 8.4
 
 jobs:
   build:
     runs-on: ubuntu-22.04
-    
+
     steps:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar repositorios y dependencias base
+      - name: Configurar repositorio LiteSpeed
         run: |
           sudo -n apt-get update
-          sudo -n apt-get install -y software-properties-common curl wget
-          
-          # Agregar PPA de PHP
-          sudo -n add-apt-repository -y ppa:ondrej/php
-          
-          # Agregar repositorio oficial de LiteSpeed
-          wget -O - https://repo.litespeed.sh | bash
-          
+          sudo -n apt-get install -y curl wget
+
+          sudo -n wget -O - https://repo.litespeed.sh | sudo -n bash
+
           sudo -n apt-get update
 
-      - name: Instalar LSPHP y herramientas de compilación
+      - name: Instalar LSPHP y herramientas
         run: |
-          sudo -n apt-get install -y build-essential libssl-dev pkg-config lsphp83 lsphp83-dev php-pear
+          sudo -n apt-get install -y \
+            build-essential \
+            pkg-config \
+            libssl-dev \
+            autoconf \
+            automake \
+            libtool \
+            lsphp83 \
+            lsphp83-dev \
+            lsphp83-pear
 
-      - name: Compilar extensión MongoDB vía PECL
+      - name: Verificar LSPHP
         run: |
-          /usr/local/lsws/lsphp83/bin/pecl install mongodb
+          /usr/local/lsws/lsphp83/bin/php -v
+          /usr/local/lsws/lsphp83/bin/phpize -v
+          /usr/local/lsws/lsphp83/bin/php-config --version
+          /usr/local/lsws/lsphp83/bin/pecl version
+
+      - name: Compilar extensión MongoDB
+        run: |
+          sudo -n /usr/local/lsws/lsphp83/bin/pecl install mongodb
 
       - name: Organizar archivos compilados
         run: |
           mkdir -p compiled/lsphp83
-          EXTENSION_PATH=$(/usr/local/lsws/lsphp83/bin/php-config --extension-dir)
-          cp "$EXTENSION_PATH/mongodb.so" compiled/lsphp83/
-          echo "extension=mongodb.so" > compiled/lsphp83/mongodb.ini
+
+          EXTENSION_PATH=$(
+            /usr/local/lsws/lsphp83/bin/php-config --extension-dir
+          )
+
+          cp "$EXTENSION_PATH/mongodb.so" \
+            compiled/lsphp83/mongodb.so
+
+          echo "extension=mongodb.so" \
+            > compiled/lsphp83/mongodb.ini
+
+      - name: Verificar extensión MongoDB
+        run: |
+          EXTENSION_PATH=$(
+            /usr/local/lsws/lsphp83/bin/php-config --extension-dir
+          )
+
+          /usr/local/lsws/lsphp83/bin/php \
+            -d extension="$EXTENSION_PATH/mongodb.so" \
+            -m | grep -i mongodb
 
       - name: Subir artefacto
         uses: actions/upload-artifact@v4
